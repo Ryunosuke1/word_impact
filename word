@@ -13,7 +13,7 @@ def extract_words(article):
     return words
 
 def get_company_name(symbol):
-    api_key = "67NWNZJ1G6RPWFR7"
+    api_key = "APIKEY"
     url = f"https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords={symbol}&apikey={api_key}"
     response = requests.get(url)
     if response.status_code == 200:
@@ -29,7 +29,7 @@ def get_company_name(symbol):
 
 def get_news_articles(company_name):
     # New York Times APIから記事を取得
-    api_key = "3hgqa4Q3mKgMYAC3A92pzGKF1YM8QPCu"
+    api_key = "APIKEY"
     url = f"https://api.nytimes.com/svc/search/v2/articlesearch.json"
     params = {
         "q": company_name,
@@ -51,7 +51,7 @@ def get_news_articles(company_name):
 symbol = ""
 
 def get_stock_price_at_date(symbol, date):
-    api_key = "0db15e271e1a6a2219233d55108e11f3"
+    api_key = "APIKEY"
     date_str = date.strftime("%Y-%m-%d")
     url = f"https://financialmodelingprep.com/api/v3/historical-price-full/{symbol}?apikey={api_key}"
     response = requests.get(url)
