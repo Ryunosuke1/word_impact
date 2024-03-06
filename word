@@ -1,0 +1,167 @@
+import requests
+from bs4 import BeautifulSoup
+import re
+from sympy import symbols, Eq, solve
+from decimal import Decimal, getcontext
+from datetime import datetime, timedelta
+import tkinter as tk
+from threading import Thread
+import json
+
+def extract_words(article):
+    words = re.findall(r'\b\w+\b', article)
+    return words
+
+def get_company_name(symbol):
+    api_key = "67NWNZJ1G6RPWFR7"
+    url = f"https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords={symbol}&apikey={api_key}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        if 'bestMatches' in data and len(data['bestMatches']) > 0:
+            return data['bestMatches'][0]['2. name']
+        else:
+            print("Error: Company name not found for symbol", symbol)
+            return None
+    else:
+        print("Error fetching company name:", response.status_code)
+        return None
+
+def get_news_articles(company_name):
+    # New York Times APIから記事を取得
+    api_key = "3hgqa4Q3mKgMYAC3A92pzGKF1YM8QPCu"
+    url = f"https://api.nytimes.com/svc/search/v2/articlesearch.json"
+    params = {
+        "q": company_name,
+        "api-key": api_key,
+        "sort": "newest",
+        "page": 0,
+        "page_size": 10  # 取得する記事の数
+    }
+
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        articles_data = response.json()
+        articles = [article['snippet'] for article in articles_data.get("response", {}).get("docs", [])]
+        return articles
+    else:
+        print("Error fetching articles:", response.status_code)
+        return []
+
+symbol = ""
+
+def get_stock_price_at_date(symbol, date):
+    api_key = "0db15e271e1a6a2219233d55108e11f3"
+    date_str = date.strftime("%Y-%m-%d")
+    url = f"https://financialmodelingprep.com/api/v3/historical-price-full/{symbol}?apikey={api_key}"
+    response = requests.get(url)
+    data = response.json()
+    
+    if 'historical' in data:
+        prices = data['historical']
+        # 指定された日付の価格を探す
+        for entry in prices:
+            if entry['date'] == date_str:
+                return Decimal(entry['close'])
+        
+        # 指定された日付よりも前の一番新しい日付の価格を探す
+        for entry in prices:
+            if entry['date'] < date_str:
+                return Decimal(entry['close'])
+        
+        print("Error: Stock price information not found.")
+        return None
+    else:
+        print("Error: Stock price information not found.")
+        return None
+
+def calculate_word_values(articles, symbol, start_date, delta_days):
+    word_counts = {}
+    equations = []
+
+    # 記事から言葉と出現回数を抽出してカウント
+    for article in articles:
+        words = extract_words(article)
+        for word in words:
+            if word in word_counts:
+                word_counts[word] += 1
+            else:
+                word_counts[word] = 1
+
+    # 記事の日付から指定された日数後の株価を取得
+    start_datetime = datetime.strptime(start_date, "%Y-%m-%d")
+    end_datetime = start_datetime + timedelta(days=delta_days)
+    start_price = get_stock_price_at_date(symbol, start_datetime)
+    end_price = get_stock_price_at_date(symbol, end_datetime)
+
+    if start_price is None or end_price is None:
+        print("Unable to fetch stock price information.")
+        return None
+
+    # 各言葉の値を未知数とする方程式を設定
+    words = list(word_counts.keys())
+    for word, count in word_counts.items():
+        equations.append((symbols(word) * count, count * (Decimal(end_price) / Decimal(start_price) - 1)))
+
+    # 連立方程式を解く
+    word_values = solve([Eq(eq[0], eq[1]) for eq in equations])
+
+    return word_values
+
+
+def calculate_word_values_background(articles, symbol, start_date, delta_days):
+    global symbols
+    def background_task():
+        word_values = calculate_word_values(articles, symbol, start_date, delta_days)
+        root.after(0, lambda: result_text.insert(tk.END, f"計算結果: {word_values}\n"))
+
+    thread = Thread(target=background_task)
+    thread.start()
+
+def calculate_button_click():
+    global symbol, delta_days
+    query = text_input.get("1.0", tk.END).strip()
+    company_name = get_company_name(query)
+    articles = get_news_articles(query)
+    start_date = text_date.get("1.0", tk.END).strip()
+    symbol = text_input.get("1.0", tk.END).strip()
+    delta_days = int(text_delta_days.get("1.0", tk.END).strip())
+
+    result_text.delete("1.0", tk.END)
+    result_text.insert(tk.END, "計算中...\n")
+    calculate_word_values_background(articles, symbol, start_date, delta_days)
+
+# GUIの作成
+root = tk.Tk()
+root.title("ニュース記事の計算")
+
+text_symbol = tk.Label(root, text="シンボルを入力してください:")
+text_symbol.pack()
+
+text_input = tk.Text(root, height=1, width=50)
+text_input.pack()
+
+label_date = tk.Label(root, text="開始日を入力してください（YYYY-MM-DD形式）:")
+label_date.pack()
+
+
+
+text_date = tk.Text(root, height=1, width=20)
+text_date.pack()
+
+
+
+
+label_days = tk.Label(root, text="取得日数を入力してください:")
+label_days.pack()
+
+text_delta_days = tk.Text(root, height=1, width=20)
+text_delta_days.pack()
+
+button_calculate = tk.Button(root, text="計算", command=calculate_button_click)
+button_calculate.pack()
+
+result_text = tk.Text(root, height=10, width=50)
+result_text.pack()
+
+root.mainloop()
