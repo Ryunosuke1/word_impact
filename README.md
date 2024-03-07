@@ -13,14 +13,17 @@ This program is a tool for calculating the relationship between news articles an
 
 ## Usage
 
-1. Run the `main.py` file.
-2. Enter the following information in the displayed GUI:
+1. Run the `word.py` file.
+   ```
+   python3 word.py
+   ```
+3. Enter the following information in the displayed GUI:
    - Company symbol
    - Start date (in YYYY-MM-DD format)
    - Number of days to retrieve
-3. Click the "Calculate and Save" button to execute the calculation.
-4. The result will be saved in the `results.txt` file.
-5. Input any text and click the "Load and Calculate" button to determine its value.
+4. Click the "Calculate and Save" button to execute the calculation.
+5. The result will be saved in the `results.txt` file.
+6. Input any text and click the "Load and Calculate" button to determine its value.
 
 ## Dependencies
 
