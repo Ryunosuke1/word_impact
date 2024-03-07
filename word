@@ -6,20 +6,20 @@ from decimal import Decimal, getcontext
 from datetime import datetime, timedelta
 import tkinter as tk
 from threading import Thread
-import json
+
 
 def extract_words(article):
     words = re.findall(r'\b\w+\b', article)
     return words
 
 def get_company_name(symbol):
-    api_key = "APIKEY"
-    url = f"https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords={symbol}&apikey={api_key}"
+    api_key = ""  # Financial Modeling Prep APIのAPIキーを指定
+    url = f"https://financialmodelingprep.com/api/v3/profile/{symbol}?apikey={api_key}"
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
-        if 'bestMatches' in data and len(data['bestMatches']) > 0:
-            return data['bestMatches'][0]['2. name']
+        if data:
+            return data[0]['companyName']
         else:
             print("Error: Company name not found for symbol", symbol)
             return None
@@ -28,30 +28,19 @@ def get_company_name(symbol):
         return None
 
 def get_news_articles(company_name):
-    # New York Times APIから記事を取得
-    api_key = "APIKEY"
-    url = f"https://api.nytimes.com/svc/search/v2/articlesearch.json"
-    params = {
-        "q": company_name,
-        "api-key": api_key,
-        "sort": "newest",
-        "page": 0,
-        "page_size": 10  # 取得する記事の数
-    }
-
-    response = requests.get(url, params=params)
+    api_key = ""  # News APIのAPIキーを指定
+    url = f"https://newsapi.org/v2/everything?q={company_name}&apiKey={api_key}"
+    response = requests.get(url)
     if response.status_code == 200:
         articles_data = response.json()
-        articles = [article['snippet'] for article in articles_data.get("response", {}).get("docs", [])]
+        articles = [(article['publishedAt'], article['title']) for article in articles_data.get("articles", [])]
         return articles
     else:
         print("Error fetching articles:", response.status_code)
         return []
 
-symbol = ""
-
 def get_stock_price_at_date(symbol, date):
-    api_key = "APIKEY"
+    api_key = ""  # Financial Modeling Prep APIのAPIキーを指定
     date_str = date.strftime("%Y-%m-%d")
     url = f"https://financialmodelingprep.com/api/v3/historical-price-full/{symbol}?apikey={api_key}"
     response = requests.get(url)
@@ -59,15 +48,13 @@ def get_stock_price_at_date(symbol, date):
     
     if 'historical' in data:
         prices = data['historical']
-        # 指定された日付の価格を探す
         for entry in prices:
             if entry['date'] == date_str:
-                return Decimal(entry['close'])
+                return entry['close']
         
-        # 指定された日付よりも前の一番新しい日付の価格を探す
         for entry in prices:
             if entry['date'] < date_str:
-                return Decimal(entry['close'])
+                return entry['close']
         
         print("Error: Stock price information not found.")
         return None
@@ -76,60 +63,68 @@ def get_stock_price_at_date(symbol, date):
         return None
 
 def calculate_word_values(articles, symbol, start_date, delta_days):
-    word_counts = {}
-    equations = []
+    word_values = {}
 
-    # 記事から言葉と出現回数を抽出してカウント
-    for article in articles:
-        words = extract_words(article)
+    for pub_date, article in articles:
+        words = article.split()
         for word in words:
-            if word in word_counts:
-                word_counts[word] += 1
+            if word in word_values:
+                word_values[word] += 1
             else:
-                word_counts[word] = 1
+                word_values[word] = 1
 
-    # 記事の日付から指定された日数後の株価を取得
-    start_datetime = datetime.strptime(start_date, "%Y-%m-%d")
-    end_datetime = start_datetime + timedelta(days=delta_days)
-    start_price = get_stock_price_at_date(symbol, start_datetime)
-    end_price = get_stock_price_at_date(symbol, end_datetime)
+        start_datetime = datetime.strptime(pub_date, "%Y-%m-%dT%H:%M:%SZ")
+        end_datetime = start_datetime + timedelta(days=delta_days)
+        start_price = get_stock_price_at_date(symbol, start_datetime)
+        end_price = get_stock_price_at_date(symbol, end_datetime)
 
-    if start_price is None or end_price is None:
-        print("Unable to fetch stock price information.")
-        return None
+        if start_price is not None and end_price is not None:
+            price_change = (end_price - start_price) / start_price
 
-    # 各言葉の値を未知数とする方程式を設定
-    words = list(word_counts.keys())
-    for word, count in word_counts.items():
-        equations.append((symbols(word) * count, count * (Decimal(end_price) / Decimal(start_price) - 1)))
+            for word, count in word_values.items():
+                word_values[word] = count * price_change
 
-    # 連立方程式を解く
-    word_values = solve([Eq(eq[0], eq[1]) for eq in equations])
+        else:
+            print(f"Error fetching stock price information for article published on {pub_date}")
 
     return word_values
 
-
-def calculate_word_values_background(articles, symbol, start_date, delta_days):
-    global symbols
-    def background_task():
-        word_values = calculate_word_values(articles, symbol, start_date, delta_days)
-        root.after(0, lambda: result_text.insert(tk.END, f"計算結果: {word_values}\n"))
-
-    thread = Thread(target=background_task)
-    thread.start()
-
 def calculate_button_click():
-    global symbol, delta_days
     query = text_input.get("1.0", tk.END).strip()
     company_name = get_company_name(query)
     articles = get_news_articles(query)
     start_date = text_date.get("1.0", tk.END).strip()
-    symbol = text_input.get("1.0", tk.END).strip()
     delta_days = int(text_delta_days.get("1.0", tk.END).strip())
 
     result_text.delete("1.0", tk.END)
     result_text.insert(tk.END, "計算中...\n")
-    calculate_word_values_background(articles, symbol, start_date, delta_days)
+
+    # 結果をファイルに書き出し
+    word_values = calculate_word_values(articles, query, start_date, delta_days)
+    with open("results.txt", "w") as file:
+        for word, value in word_values.items():
+            file.write(f"{word}: {value}\n")
+
+    result_text.insert(tk.END, "計算結果を results.txt に保存しました。\n")
+
+def read_and_calculate_button_click():
+    result_text.delete("1.0", tk.END)
+    result_text.insert(tk.END, "結果を読み込んで計算中...\n")
+
+    # ファイルから結果を読み込み
+    word_values = {}
+    with open("results.txt", "r") as file:
+        lines = file.readlines()
+        for line in lines:
+            word, value = line.strip().split(": ")
+            word_values[word] = float(value)
+
+    # 任意の文章の値を計算
+    query_text = text_query.get("1.0", tk.END).strip()
+    words = extract_words(query_text)
+    total_value = sum(word_values.get(word, 0) for word in words)
+
+    result_text.insert(tk.END, f"文章の値: {total_value}\n")
 
 # GUIの作成
 root = tk.Tk()
@@ -144,13 +139,8 @@ text_input.pack()
 label_date = tk.Label(root, text="開始日を入力してください（YYYY-MM-DD形式）:")
 label_date.pack()
 
-
-
 text_date = tk.Text(root, height=1, width=20)
 text_date.pack()
-
-
-
 
 label_days = tk.Label(root, text="取得日数を入力してください:")
 label_days.pack()
@@ -158,8 +148,17 @@ label_days.pack()
 text_delta_days = tk.Text(root, height=1, width=20)
 text_delta_days.pack()
 
-button_calculate = tk.Button(root, text="計算", command=calculate_button_click)
+button_calculate = tk.Button(root, text="計算して保存", command=calculate_button_click)
 button_calculate.pack()
+
+text_query_label = tk.Label(root, text="任意の文章を入力してください:")
+text_query_label.pack()
+
+text_query = tk.Text(root, height=4, width=50)
+text_query.pack()
+
+button_read_and_calculate = tk.Button(root, text="結果を読み込んで計算", command=read_and_calculate_button_click)
+button_read_and_calculate.pack()
 
 result_text = tk.Text(root, height=10, width=50)
 result_text.pack()
