@@ -1,4 +1,4 @@
-Japanese()
+[Japanese](https://github.com/Ryunosuke1/word_impact/blob/main/README_japanese.md)
 # Word Impact(News Article and Stock Price Relationship Calculator)
 
 This program is a tool for calculating the relationship between news articles and stock prices of companies. Based on the user-provided company symbol, start date, and number of days to retrieve, it analyzes the content of news articles and the fluctuation of stock prices to assign weights to relevant words.
