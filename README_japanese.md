@@ -10,7 +10,7 @@
 - 任意の文章に含まれる単語の重要度を合計して、文章全体の価値を算出します。
 ## 使用方法
 
-1.word.py ファイルを実行します。
+1. `main.py` ファイルを実行します。
 2. GUIが表示されるので、以下の情報を入力します:
  - 企業のシンボル
  - 開始日（YYYY-MM-DD形式）
@@ -34,7 +34,7 @@ pip install -r requirements.txt
 
 ## APIキーの設定
 
-このプログラムでは、Financial Modeling Prep APIとNews APIを使用しています。APIキーを取得してください。取得したAPIキーを `word.py` ファイル内で適切な場所に設定してください。
+このプログラムでは、Financial Modeling Prep APIとNews APIを使用しています。APIキーを取得してください。取得したAPIキーを `main.py` ファイル内で適切な場所に設定してください。
 
 ```python
 api_key_fmp = "YOUR_FINANCIAL_MODELING_PREP_API_KEY"
