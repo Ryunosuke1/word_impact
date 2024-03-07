@@ -13,7 +13,7 @@ def extract_words(article):
     return words
 
 def get_company_name(symbol):
-    api_key = ""  # Financial Modeling Prep APIのAPIキーを指定
+    api_key = "YOUR_FINANCIAL_MODELING_PREP_API_KEY"  # Financial Modeling Prep APIのAPIキーを指定
     url = f"https://financialmodelingprep.com/api/v3/profile/{symbol}?apikey={api_key}"
     response = requests.get(url)
     if response.status_code == 200:
