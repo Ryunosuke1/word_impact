@@ -34,7 +34,7 @@ pip install -r requirements.txt
 
 ## APIキーの設定
 
-このプログラムでは、Financial Modeling Prep APIとNews APIを使用しています。APIキーを取得してください。取得したAPIキーを `main.py` ファイル内で適切な場所に設定してください。
+このプログラムでは、Financial Modeling Prep APIとNews APIを使用しています。APIキーを取得してください。取得したAPIキーを `word.py` ファイル内で適切な場所に設定してください。
 
 ```python
 api_key_fmp = "YOUR_FINANCIAL_MODELING_PREP_API_KEY"
