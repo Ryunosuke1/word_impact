@@ -13,9 +13,9 @@ This program is a tool for calculating the relationship between news articles an
 
 ## Usage
 
-1. Run the `word.py` file.
+1. Run the `main.py` file.
    ```
-   python3 word.py
+   python3 main.py
    ```
 3. Enter the following information in the displayed GUI:
    - Company symbol
@@ -39,7 +39,7 @@ pip install -r requirements.txt
 ```
 ## Setting Up API Keys
 
-This program utilizes the Financial Modeling Prep API and the News API. Please obtain your API keys and set them appropriately within the `word.py` file.
+This program utilizes the Financial Modeling Prep API and the News API. Please obtain your API keys and set them appropriately within the `main.py` file.
 
 ```python
 api_key_fmp = "YOUR_FINANCIAL_MODELING_PREP_API_KEY"
