@@ -36,7 +36,7 @@ pip install -r requirements.txt
 ```
 ## Setting Up API Keys
 
-This program utilizes the Financial Modeling Prep API and the News API. Please obtain your API keys and set them appropriately within the `main.py` file.
+This program utilizes the Financial Modeling Prep API and the News API. Please obtain your API keys and set them appropriately within the `word.py` file.
 
 ```python
 api_key_fmp = "YOUR_FINANCIAL_MODELING_PREP_API_KEY"
