@@ -43,3 +43,7 @@ pip install -r requirements.txt
 api_key_fmp = "YOUR_FINANCIAL_MODELING_PREP_API_KEY"
 api_key_news = "YOUR_NEWS_API_KEY"
 
+---
+
+これは間違っている可能性があります。ソースコードを確認する必要があります。
+
