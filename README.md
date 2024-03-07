@@ -49,5 +49,4 @@ By providing clear instructions on how to set up API keys, dependencies, and usa
 
 ---
 
-This may be wrong.
-You should check the source cord.
+You should check the source cord because the readme.md may be wrong.
