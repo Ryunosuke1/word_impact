@@ -26,6 +26,9 @@ beautifulsoup4
 sympy
 tkinter
 これらの依存関係は requirements.txt ファイルに含まれています。必要に応じて、次のコマンドを使用してインストールできます:
+```
+pip install -r requirements.txt
+```
 
 Copy code
 pip install -r requirements.txt
